@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="bJWXeyaQCabqK9RTnrguNJ">
+<head data-page-node-id="p0FgagoLmvtsvDZTJdGVAc">
+<meta charset="utf-8" data-page-node-id="mfDGOM47gAwYlYUWpPcNBU">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" data-page-node-id="aHpxMb07CY8dUPR234EfrO">
+<meta name="theme-color" content="#0a0a0c" data-page-node-id="LUeHroPNwpSyiMkAyhQX7N">
+<meta name="apple-mobile-web-app-capable" content="yes" data-page-node-id="NA4uyJnrMbTYRSGoqTc6CX">
+<meta name="mobile-web-app-capable" content="yes" data-page-node-id="oNOFH7tjjU25GdHKm7PTJe">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" data-page-node-id="4AyBapBK6BA4dXGZH2yHdt">
+<meta name="apple-mobile-web-app-title" content="翻页时钟" data-page-node-id="YboIs3fgrdVfpDr1IJBP9P">
+<meta name="format-detection" content="telephone=no" data-page-node-id="h1320GZR3EfBVLjrT2aY3D">
+<meta name="description" content="放在桌上的翻页时钟" data-page-node-id="PrwF1Y2qGC8bDsN6fVACXD">
+<title>翻页时钟</title>
+<link rel="manifest" href="manifest.webmanifest" data-page-node-id="KR8dCQ7PgGhB965zgJIeiZ">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" data-page-node-id="aYx17CHn2rDXcujQFfHslH">
+<link rel="icon" href="icons/icon-192.png" data-page-node-id="PrWMPGFzh36pbyJKQo8Jmb">
+<style>
+:root{
+  --bg:#000;
+  --card-top:#2b2b30;
+  --card-bottom:#1c1c20;
+  --flap-top:#33333a;
+  --flap-bottom:#1c1c20;
+  --ink:#f2f2f5;
+  --muted:rgba(242,242,245,.38);
+  --line:rgba(255,255,255,.1);
+  --seam:rgba(0,0,0,.92);
+  --accent:#f2f2f5;
+  --u:min(20vw,26dvh);
+  --radius:8px;
+}
+@supports not (height:100dvh){
+  :root{ --u:min(20vw,24vh); }
+}
+@media (orientation:landscape){
+  :root{ --u:min(14vw,30dvh); }
+}
+
+*,*::before,*::after{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; }
+body{
+  position:fixed; inset:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+  -webkit-user-select:none; user-select:none;
+  -webkit-tap-highlight-color:transparent;
+  -webkit-touch-callout:none;
+  overscroll-behavior:none;
+  touch-action:manipulation;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  transition:background .35s ease;
+}
+
+#stage{
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  transition:transform .32s cubic-bezier(.3,.8,.3,1), opacity .3s;
+}
+body.sheet-open #stage{
+  transform:scale(.9);
+  opacity:.45;
+}
+
+#burn{
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:calc(var(--u) * .1);
+  transition:transform 4s ease;
+  will-change:transform;
+}
+
+.row{ display:flex; align-items:center; justify-content:center; gap:calc(var(--u) * .07); }
+.row.sec{ gap:calc(var(--u) * .05); }
+
+.card{
+  position:relative;
+  width:var(--u);
+  height:calc(var(--u) * 1.45);
+  perspective:calc(var(--u) * 6);
+  border-radius:calc(var(--u) * .105);
+  background:var(--bg);
+  box-shadow:0 0 0 .5px var(--line), 0 calc(var(--u)*.05) calc(var(--u)*.12) rgba(0,0,0,.26);
+  transform:translateZ(0);
+}
+.card.small{
+  width:calc(var(--u) * .46);
+  height:calc(var(--u) * .67);
+  border-radius:calc(var(--u) * .05);
+}
+.card.small span{
+  height:calc(var(--u) * .67);
+  line-height:calc(var(--u) * .67);
+  font-size:calc(var(--u) * .6);
+}
+
+.face,.flap{
+  position:absolute; left:0; width:100%; height:50%;
+  overflow:hidden;
+  backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+}
+.face span,.flap span{
+  position:absolute; left:0; width:100%;
+  height:calc(var(--u) * 1.45);
+  line-height:calc(var(--u) * 1.45);
+  font-size:calc(var(--u) * 1.32);
+  font-weight:500;
+  letter-spacing:-.02em;
+  text-align:center;
+  font-variant-numeric:tabular-nums;
+  font-feature-settings:"tnum" 1;
+  color:var(--ink);
+}
+.face.top{
+  top:0;
+  border-radius:calc(var(--u) * .105) calc(var(--u) * .105) 0 0;
+  background:var(--card-top);
+}
+.face.top span{ top:0; }
+.face.bottom{
+  bottom:0;
+  border-radius:0 0 calc(var(--u) * .105) calc(var(--u) * .105);
+  background:var(--card-bottom);
+  border-top:.5px solid var(--seam);
+}
+.face.bottom span{ bottom:0; }
+
+.flap{ z-index:3; }
+.flap-top{
+  top:0;
+  transform-origin:50% 100%;
+  transform:rotateX(0deg);
+  border-radius:calc(var(--u) * .105) calc(var(--u) * .105) 0 0;
+  background:var(--flap-top);
+  box-shadow:0 .5px 0 var(--seam);
+  will-change:transform;
+}
+.flap-top span{ top:0; }
+.flap-bottom{
+  bottom:0;
+  transform-origin:50% 0%;
+  transform:rotateX(90deg) translateZ(.02px);
+  border-radius:0 0 calc(var(--u) * .105) calc(var(--u) * .105);
+  background:var(--flap-bottom);
+  will-change:transform;
+}
+.flap-bottom span{ bottom:0; }
+
+.card.flipping .flap-top{ animation:flipTop .3s cubic-bezier(.32,.7,.3,1) forwards; }
+.card.flipping .flap-bottom{ animation:flipBottom .32s .3s cubic-bezier(.2,.62,.34,1) forwards; }
+@keyframes flipTop{ from{ transform:rotateX(0deg) } to{ transform:rotateX(-90deg) } }
+@keyframes flipBottom{ from{ transform:rotateX(90deg) } to{ transform:rotateX(0deg) } }
+
+.colon{
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+  gap:calc(var(--u) * .21);
+  width:calc(var(--u) * .3);
+  height:calc(var(--u) * 1.45);
+}
+.colon i{
+  display:block;
+  width:calc(var(--u) * .105);
+  height:calc(var(--u) * .105);
+  border-radius:50%;
+  background:var(--ink);
+  opacity:.9;
+}
+.colon.small{ width:calc(var(--u) * .16); height:calc(var(--u) * .67); gap:calc(var(--u) * .11); }
+.colon.small i{ width:calc(var(--u) * .06); height:calc(var(--u) * .06); }
+
+#caption{
+  margin-top:calc(var(--u) * .16);
+  font-size:calc(var(--u) * .17);
+  letter-spacing:.22em;
+  text-indent:.22em;
+  color:var(--muted);
+  font-variant-numeric:tabular-nums;
+  text-transform:uppercase;
+  transition:opacity .3s;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:calc(var(--u) * .09);
+}
+#caption .ampm{
+  display:inline-block;
+  padding:calc(var(--u) * .022) calc(var(--u) * .08);
+  border:.5px solid var(--line);
+  border-radius:calc(var(--u) * .045);
+  color:var(--ink);
+  opacity:.88;
+  font-size:calc(var(--u) * .15);
+  font-weight:500;
+  letter-spacing:.14em;
+  text-indent:.14em;
+  line-height:1.3;
+  background:var(--card-top);
+}
+
+#hint{
+  position:absolute;
+  bottom:calc(env(safe-area-inset-bottom) + 26px);
+  left:0; right:0;
+  text-align:center;
+  font-size:12px;
+  letter-spacing:.18em;
+  color:rgba(242,242,245,.3);
+  transition:opacity .8s;
+  pointer-events:none;
+}
+#hint.gone{ opacity:0; }
+
+#sheet{
+  position:absolute;
+  left:0; right:0; bottom:0;
+  background:rgba(22,22,26,.94);
+  -webkit-backdrop-filter:blur(28px) saturate(160%);
+  backdrop-filter:blur(28px) saturate(160%);
+  border-radius:22px 22px 0 0;
+  border-top:.5px solid rgba(255,255,255,.14);
+  padding:10px 18px calc(env(safe-area-inset-bottom) + 18px);
+  transform:translateY(102%);
+  transition:transform .34s cubic-bezier(.32,.72,0,1);
+  max-height:82%;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  z-index:40;
+  color:#f2f2f5;
+}
+#sheet.open{ transform:translateY(0); }
+
+.grabber{
+  width:38px; height:4px; border-radius:2px;
+  background:rgba(255,255,255,.22);
+  margin:2px auto 14px;
+}
+
+.tabs{
+  display:flex; gap:6px;
+  margin-bottom:16px;
+  overflow-x:auto;
+  scrollbar-width:none;
+}
+.tabs::-webkit-scrollbar{ display:none; }
+.tab{
+  flex:0 0 auto;
+  padding:8px 15px;
+  border-radius:999px;
+  border:.5px solid rgba(255,255,255,.14);
+  background:transparent;
+  color:rgba(242,242,245,.62);
+  font-size:13px;
+  font-family:inherit;
+  cursor:pointer;
+  transition:all .2s;
+  -webkit-appearance:none;
+}
+.tab.on{
+  background:#f2f2f5;
+  color:#121216;
+  border-color:#f2f2f5;
+  font-weight:500;
+}
+
+.pane{ display:none; }
+.pane.on{ display:block; }
+
+.bigDisp{
+  text-align:center;
+  font-size:54px;
+  font-weight:300;
+  letter-spacing:.02em;
+  font-variant-numeric:tabular-nums;
+  line-height:1.1;
+  margin:6px 0 4px;
+}
+.subDisp{
+  text-align:center;
+  font-size:12px;
+  color:rgba(242,242,245,.45);
+  letter-spacing:.14em;
+  margin-bottom:18px;
+}
+
+.btnRow{ display:flex; gap:10px; margin-bottom:14px; }
+.btn{
+  flex:1;
+  height:46px;
+  border-radius:13px;
+  border:.5px solid rgba(255,255,255,.16);
+  background:rgba(255,255,255,.06);
+  color:#f2f2f5;
+  font-size:15px;
+  font-family:inherit;
+  cursor:pointer;
+  -webkit-appearance:none;
+  transition:background .18s, transform .1s;
+}
+.btn:active{ transform:scale(.97); }
+.btn.primary{
+  background:#f2f2f5;
+  color:#121216;
+  border-color:#f2f2f5;
+  font-weight:500;
+}
+
+.chips{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+.chip{
+  padding:9px 15px;
+  border-radius:11px;
+  border:.5px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.05);
+  color:rgba(242,242,245,.75);
+  font-size:13px;
+  font-family:inherit;
+  cursor:pointer;
+  -webkit-appearance:none;
+}
+.chip.on{ background:rgba(242,242,245,.92); color:#121216; border-color:transparent; }
+
+.stats{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px; }
+.stat{
+  background:rgba(255,255,255,.055);
+  border-radius:13px;
+  padding:14px;
+}
+.stat .k{ font-size:11px; color:rgba(242,242,245,.45); letter-spacing:.1em; margin-bottom:6px; }
+.stat .v{ font-size:24px; font-weight:400; font-variant-numeric:tabular-nums; }
+.stat .v small{ font-size:12px; color:rgba(242,242,245,.5); margin-left:2px; }
+
+.bars{
+  display:flex; align-items:flex-end; gap:7px;
+  height:88px; margin-bottom:8px;
+}
+.bar{
+  flex:1;
+  display:flex; flex-direction:column; justify-content:flex-end;
+  height:100%;
+}
+.bar i{
+  display:block;
+  width:100%;
+  border-radius:4px 4px 2px 2px;
+  background:rgba(242,242,245,.28);
+  min-height:2px;
+  transition:height .4s ease;
+}
+.bar.today i{ background:#f2f2f5; }
+.barLabels{ display:flex; gap:7px; font-size:10px; color:rgba(242,242,245,.35); text-align:center; }
+.barLabels span{ flex:1; }
+
+.setRow{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:13px 0;
+  border-bottom:.5px solid rgba(255,255,255,.08);
+  font-size:14px;
+}
+.setRow:last-child{ border-bottom:none; }
+.setRow .lab{ color:rgba(242,242,245,.82); }
+.setRow .val{ color:rgba(242,242,245,.42); font-size:13px; }
+
+.switch{
+  width:48px; height:29px; border-radius:15px;
+  background:rgba(255,255,255,.16);
+  position:relative; cursor:pointer;
+  transition:background .24s;
+  flex:0 0 auto;
+}
+.switch::after{
+  content:"";
+  position:absolute; top:3px; left:3px;
+  width:23px; height:23px; border-radius:50%;
+  background:#fff;
+  transition:transform .24s cubic-bezier(.3,.8,.3,1);
+}
+.switch.on{ background:#5b8cff; }
+.switch.on::after{ transform:translateX(19px); }
+
+.swatches{ display:flex; gap:8px; }
+.sw{
+  width:30px; height:30px; border-radius:9px;
+  border:.5px solid rgba(255,255,255,.3);
+  cursor:pointer;
+  position:relative;
+  overflow:hidden;
+}
+.sw::after{
+  content:"";
+  position:absolute; left:50%; top:50%;
+  transform:translate(-50%,-50%);
+  width:9px; height:9px; border-radius:50%;
+  background:var(--sw-ink,#fff);
+}
+.sw.on{ box-shadow:0 0 0 2px rgba(242,242,245,.85); }
+
+input[type=range]{
+  -webkit-appearance:none; appearance:none;
+  width:130px; height:4px; border-radius:2px;
+  background:rgba(255,255,255,.18);
+  outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:20px; height:20px; border-radius:50%;
+  background:#f2f2f5;
+  cursor:pointer;
+}
+
+.tip{
+  font-size:11.5px; line-height:1.75;
+  color:rgba(242,242,245,.38);
+  margin:14px 0 0;
+}
+
+#toast{
+  position:absolute;
+  left:50%; bottom:calc(env(safe-area-inset-bottom) + 84px);
+  transform:translate(-50%,12px);
+  background:rgba(38,38,44,.96);
+  border:.5px solid rgba(255,255,255,.16);
+  color:#f2f2f5;
+  font-size:12.5px;
+  padding:9px 16px;
+  border-radius:11px;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .25s, transform .25s;
+  z-index:60;
+  white-space:nowrap;
+}
+#toast.on{ opacity:1; transform:translate(-50%,0); }
+
+@media (prefers-reduced-motion: reduce){
+  .card.flipping .flap-top,.card.flipping .flap-bottom{ animation-duration:.01s; }
+  .card.flipping .flap-bottom{ animation-delay:.01s; }
+  #burn{ transition:none; }
+}
+</style>
+</head>
+<body data-theme="classic" data-page-node-id="pkuA37OfuSuhR9bKU9Ceok">
+
+<div id="stage" data-page-node-id="sxOeITIq6rVOoRisUu8D8T">
+  <div id="burn" data-page-node-id="FnsNNcrpxIvRaGzkuPufOj">
+    <div class="row" id="rowMain" data-page-node-id="y6jxwnPFp9p0cJKAnTIfBG"></div>
+    <div class="row" id="rowSec" data-page-node-id="KGAM7PW1hrkOpKSQyjsrXl"></div>
+    <div id="caption" data-page-node-id="zQ3AprElsYn3VaV5g48Xk4"></div>
+  </div>
+</div>
+
+<div id="hint" data-page-node-id="FX6ZK8AsnfwG5H6z1LAV8T">轻触屏幕</div>
+<div id="toast" data-page-node-id="AsIcsijy4IK8Wox1LKfaiL"></div>
+
+<div id="sheet" data-page-node-id="NpRoT4qTcRthR232gFI9HK">
+  <div class="grabber" data-page-node-id="bcAM2MAYGtiubEJTmaFVSq"></div>
+
+  <div class="tabs" id="tabs" data-page-node-id="R09aAGHNF2tKIvr5CAPHUy">
+    <button class="tab on" data-pane="pomo" data-page-node-id="k6oMSZT1w2Bp4CeSHzm9SS">番茄钟</button>
+    <button class="tab" data-pane="count" data-page-node-id="sxUyAS1RNbeG1YoIfDT3K4">倒计时</button>
+    <button class="tab" data-pane="stop" data-page-node-id="ZEUDxWPiBa5XYt7yKtEe8F">秒表</button>
+    <button class="tab" data-pane="stats" data-page-node-id="uHPJJiwmjVzfNM8GBHNL7c">记录</button>
+    <button class="tab" data-pane="set" data-page-node-id="yLgpwLW9rcKKuGgm3rXHYX">设置</button>
+  </div>
+
+  <div class="pane on" id="pane-pomo" data-page-node-id="KLGfrg7x8RldGPgomLG79M">
+    <div class="bigDisp" id="pomoDisp" data-page-node-id="Lx0TmFEyAcPY9uK8dgWiof">25:00</div>
+    <div class="subDisp" id="pomoSub" data-page-node-id="sDHqEZix8iuk0wWeDCNO8n">专注 · 已连续 0 个</div>
+    <div class="btnRow" data-page-node-id="CpcNTt7VMQN0PAjPc7CG8F">
+      <button class="btn primary" id="pomoStart" data-page-node-id="ZfDl0X3jO1nzXYqKUYKj6E">开始</button>
+      <button class="btn" id="pomoReset" data-page-node-id="dQRmDUDqLjw0E0Jx3KY67R">重置</button>
+    </div>
+    <div class="chips" id="pomoChips" data-page-node-id="ZkkcrgqOqnb5ALYQeO1O0W">
+      <button class="chip on" data-min="25" data-page-node-id="jtTeCpiaIsDPXJKCDwPNXD">25 分钟</button>
+      <button class="chip" data-min="45" data-page-node-id="cBnpYHvxylZHV27djGtpGv">45 分钟</button>
+      <button class="chip" data-min="15" data-page-node-id="HejHKpYhpnDVhvWGFC783D">15 分钟</button>
+      <button class="chip" data-min="50" data-page-node-id="5GxoZ1yk9POEh7a025NNzA">50 分钟</button>
+    </div>
+    <p class="tip" data-page-node-id="FFr1g45sc6d1CEJPT9qO3G">结束后自动进入 5 分钟休息，每 4 个番茄长休 15 分钟。计时期间请让屏幕保持点亮。</p>
+  </div>
+
+  <div class="pane" id="pane-count" data-page-node-id="EaHqbGhmAOWer86Ntzsg86">
+    <div class="bigDisp" id="countDisp" data-page-node-id="EbWmxhRhrfDsN83HspC7Ac">15:00</div>
+    <div class="subDisp" data-page-node-id="IJBBCfosBUyFwRt1BMgHI2">倒计时</div>
+    <div class="btnRow" data-page-node-id="RLF6bok2fPlZdzktMnTSu0">
+      <button class="btn primary" id="countStart" data-page-node-id="L3A6ZhRqEKrtukqIUQiH5F">开始</button>
+      <button class="btn" id="countReset" data-page-node-id="RvYgPzABFL0IZgSKAX0TXf">重置</button>
+    </div>
+    <div class="chips" id="countChips" data-page-node-id="Z5mNyEwTzpuKxFCWUbAnMp">
+      <button class="chip" data-min="1" data-page-node-id="xb18JgrbIQnS4v8vx4ctYz">1 分</button>
+      <button class="chip" data-min="3" data-page-node-id="6KYy3pd4kjfbr0EVGf3v5Q">3 分</button>
+      <button class="chip" data-min="5" data-page-node-id="FpSuCBA2ZieEkfhdzKsKYz">5 分</button>
+      <button class="chip" data-min="10" data-page-node-id="NCSGS8CD9ffsnAuDlTDbXo">10 分</button>
+      <button class="chip on" data-min="15" data-page-node-id="LCJxCvjAUvo3VymqBkfebn">15 分</button>
+      <button class="chip" data-min="30" data-page-node-id="j3Efm2AJPqUJu91zy113aG">30 分</button>
+      <button class="chip" data-min="60" data-page-node-id="wg3NmAB4sIyU2LXyKnnlXA">60 分</button>
+    </div>
+  </div>
+
+  <div class="pane" id="pane-stop" data-page-node-id="Pt7pOpYdEBHaBHOPjytdxk">
+    <div class="bigDisp" id="stopDisp" data-page-node-id="EvjVFQ1hTxsJ2rVMzLb7um">00:00</div>
+    <div class="subDisp" id="stopSub" data-page-node-id="nuZcEXkPMZR1zBkaHWOHe3">秒表</div>
+    <div class="btnRow" data-page-node-id="AMB58iIy0oYPKDXe65klI6">
+      <button class="btn primary" id="stopStart" data-page-node-id="Ly9yciB0SlWtbdOgNNls2Q">开始</button>
+      <button class="btn" id="stopReset" data-page-node-id="fSXGicCGbaXqqFuba8FChU">清零</button>
+    </div>
+    <p class="tip" data-page-node-id="dS6oIUG8DAmQ3FSu6yy94j">秒表不写入专注记录。</p>
+  </div>
+
+  <div class="pane" id="pane-stats" data-page-node-id="Y9VX7JnCzzLWKkD52jmeZu">
+    <div class="stats" data-page-node-id="TgyE2jYfafaKJj9LEOi1Y0">
+      <div class="stat" data-page-node-id="R3fMdpIQoqe3zqce9Oad3e">
+        <div class="k" data-page-node-id="C3OesdvTkLYhc0GrGhF5mH">今日番茄</div>
+        <div class="v" id="stPomo" data-page-node-id="Bp2stpRXQEhhRId1jRo5n8">0<small data-page-node-id="zNgM00POFs894oBQmT2szL">个</small></div>
+      </div>
+      <div class="stat" data-page-node-id="61dRaHVCGAiArL5zCdc1A8">
+        <div class="k" data-page-node-id="RmeNfN5qbu6ZgfZzewyHUO">今日专注</div>
+        <div class="v" id="stFocus" data-page-node-id="bgeW16Q3A9XTJWAWOJUGxC">0<small data-page-node-id="QdFjVCjqL0nIOBtX8Bkl7q">分钟</small></div>
+      </div>
+    </div>
+    <div class="bars" id="bars" data-page-node-id="A3VKedveJaEytd1sIKw1UH"></div>
+    <div class="barLabels" id="barLabels" data-page-node-id="ptECsGPi6CDBIUIdj9gWxh"></div>
+    <p class="tip" data-page-node-id="PmdFFMHa5tGdqF3laKLJ21">数据只保存在这台设备上，不上传，换设备不会同步。</p>
+  </div>
+
+  <div class="pane" id="pane-set" data-page-node-id="IokLgTM3D9msd2J2a7RAPd">
+    <div class="setRow" data-page-node-id="1JGDCulnWdHo33ZTRcuXy5">
+      <span class="lab" data-page-node-id="B0cPKiDhxW1R0zlfutgNxm">主题</span>
+      <div class="swatches" id="swatches" data-page-node-id="ZueqSKh6mN2EgWIqjUatfm"></div>
+    </div>
+    <div class="setRow" data-page-node-id="UHpd2XzM5TPr1caZNQ1FF2">
+      <span class="lab" data-page-node-id="BAt21HOGKTDTQmRDnc7Hi0">24 小时制</span>
+      <div class="switch on" id="sw24" data-page-node-id="AzPNFJO9kYl3YLmZWkc8eX"></div>
+    </div>
+    <div class="setRow" data-page-node-id="EWi3heFbWo9o8F86BukCU9">
+      <span class="lab" data-page-node-id="YUETPDn1BglNkupcFDzx5l">显示秒</span>
+      <div class="switch on" id="swSec" data-page-node-id="CXfZXtz0tzFfSrkL1TVoGQ"></div>
+    </div>
+    <div class="setRow" data-page-node-id="dvc7wghOhC2iZbNzm2TYMm">
+      <span class="lab" data-page-node-id="NnjG65h5V1TzZAEw2U1qfx">翻页音效</span>
+      <div class="switch" id="swSound" data-page-node-id="eCcMAYv4PwYJDGYuTvj2gG"></div>
+    </div>
+    <div class="setRow" data-page-node-id="uEAuPivSNBHEPMUhbcBK4R">
+      <span class="lab" data-page-node-id="m0AE0RdbhEjBBH6WhjLxPt">保持屏幕常亮</span>
+      <div class="switch on" id="swWake" data-page-node-id="HzfLRbKpZpwof6F475L8RZ"></div>
+    </div>
+    <div class="setRow" data-page-node-id="lCX3bq55x3nGOEo3jyVoG0">
+      <span class="lab" data-page-node-id="QGBKJCE7XZKji0UoWQNhfq">夜间自动调暗</span>
+      <div class="switch on" id="swNight" data-page-node-id="zG5gyCkoIUlyZGdwZg10qD"></div>
+    </div>
+    <div class="setRow" data-page-node-id="2UnsuvkmCUOZCn9rnYoIN6">
+      <span class="lab" data-page-node-id="9biMXXLhm2R2NF52eTdyVK">亮度</span>
+      <input type="range" id="bright" min="20" max="100" value="100" data-page-node-id="1Mduoc2LwZraNqzb2WHCrU">
+    </div>
+    <p class="tip" id="capTip" data-page-node-id="UEDlgxNRM9xrlxIbgTv6s2"></p>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
